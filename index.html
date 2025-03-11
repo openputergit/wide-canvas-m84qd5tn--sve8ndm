@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DREAMSCAPE - Visualize, Motivate, Achieve</title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        .dream-card {
+            transition: transform 0.3s ease;
+        }
+        .dream-card:hover {
+            transform: translateY(-5px);
+        }
+        .progress-animation {
+            animation: progress 1.5s ease-in-out;
+        }
+        @keyframes progress {
+            from { width: 0%; }
+            to { width: var(--progress); }
+        }
+        .coin-animation {
+            animation: bounce 0.5s ease infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading" class="loading flex items-center justify-center">
+        <div class="text-white text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
+            <p>Loading your dreams...</p>
+        </div>
+    </div>
+
+    <!-- Login/Register Form (Initially Visible) -->
+    <div id="authForm" class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-center mb-6 text-purple-600">DREAMSCAPE</h2>
+            <div class="space-y-4">
+                <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg">
+                <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg">
+                <button onclick="handleAuth()" class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition">
+                    Get Started
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App (Initially Hidden) -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-purple-600">DREAMSCAPE</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <i class="bi bi-coin text-yellow-500 text-xl"></i>
+                        <span id="coinCount" class="ml-2 font-semibold">0</span>
+                    </div>
+                    <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
+                        <i class="bi bi-box-arrow-right text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dream Setup (Initially Hidden) -->
+        <div id="dreamSetup" class="container mx-auto px-4 py-8">
+            <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-bold mb-6">What's Your Dream?</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block mb-2">Select Your Dream</label>
+                        <select id="dreamType" class="w-full p-3 border rounded-lg">
+                            <option value="house">Dream House</option>
+                            <option value="car">Dream Car</option>
+                            <option value="business">Own Business</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Select Your Learning Domain</label>
+                        <select id="domain" class="w-full p-3 border rounded-lg">
+                            <option value="dsa">Data Structures & Algorithms</option>
+                            <option value="web">Web Development</option>
+                            <option value="ai">Artificial Intelligence</option>
+                        </select>
+                    </div>
+                    <button onclick="startJourney()" class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition">
+                        Start My Journey
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard (Initially Hidden) -->
+        <div id="dashboard" class="hidden container mx-auto px-4 py-8">
+            <!-- Progress Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4">Current Progress</h3>
+                    <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-purple-600 progress-animation" style="--progress: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4">Current Level</h3>
+                    <p id="currentLevel" class="text-3xl font-bold text-purple-600">1</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4">Daily Streak</h3>
+                    <p id="streak" class="text-3xl font-bold text-purple-600">0 days</p>
+                </div>
+            </div>
+
+            <!-- Daily Tasks -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-semibold mb-4">Today's Tasks</h3>
+                <div id="taskList" class="space-y-4">
+                    <!-- Tasks will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Dream Visualization -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Your Dream Visualization</h3>
+                <div id="dreamVisualization" class="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <!-- Lottie animation will be added here -->
+                    <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_UJNc2t.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize state
+        let state = {
+            coins: 0,
+            level: 1,
+            progress: 0,
+            streak: 0,
+            tasks: [],
+            isLoggedIn: false,
+            userId: null,
+            appSlug: 'dreamscape-123456'
+        };
+
+        // Generate a unique user ID and store it
+        function generateUserId() {
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Handle authentication
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            showLoading();
+            
+            // Generate and store user ID if not exists
+            if (!localStorage.getItem('userId')) {
+                localStorage.setItem('userId', generateUserId());
+            }
+            state.userId = localStorage.getItem('userId');
+
+            // Create user record in database
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/db', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ooiywoxBprdcS54R6LNc9QWtVfh1',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: state.userId,
+                        appSlug: state.appSlug,
+                        action: 'create',
+                        table: 'users',
+                        data: {
+                            email,
+                            coins: 0,
+                            level: 1,
+                            progress: 0,
+                            streak: 0
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    state.isLoggedIn = true;
+                    document.getElementById('authForm').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('dreamSetup').classList.remove('hidden');
+                    hideLoading();
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                hideLoading();
+                alert('Authentication failed. Please try again.');
+            }
+        }
+
+        // Start the journey after dream setup
+        async function startJourney() {
+            const dreamType = document.getElementById('dreamType').value;
+            const domain = document.getElementById('domain').value;
+
+            showLoading();
+
+            try {
+                // Save dream preferences
+                await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/db', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ooiywoxBprdcS54R6LNc9QWtVfh1',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: state.userId,
+                        appSlug: state.appSlug,
+                        action: 'create',
+                        table: 'dreams',
+                        data: {
+                            dreamType,
+                            domain
+                        }
+                    })
+                });
+
+                // Generate initial tasks
+                generateTasks(domain);
+                
+                document.getElementById('dreamSetup').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                hideLoading();
+            } catch (error) {
+                console.error('Error starting journey:', error);
+                hideLoading();
+                alert('Failed to start journey. Please try again.');
+            }
+        }
+
+        // Generate tasks based on domain
+        function generateTasks(domain) {
+            const tasks = [];
+            if (domain === 'dsa') {
+                tasks.push(
+                    { id: 1, title: 'Complete Arrays Tutorial', coins: 50, completed: false },
+                    { id: 2, title: 'Solve Linked List Problems', coins: 75, completed: false },
+                    { id: 3, title: 'Watch Stack & Queue Video', coins: 40, completed: false }
+                );
+            } else if (domain === 'web') {
+                tasks.push(
+                    { id: 1, title: 'Build a Responsive Layout', coins: 60, completed: false },
+                    { id: 2, title: 'Complete JavaScript Basics', coins: 80, completed: false },
+                    { id: 3, title: 'Create an API Integration', coins: 100, completed: false }
+                );
+            } else {
+                tasks.push(
+                    { id: 1, title: 'Study Neural Networks', coins: 90, completed: false },
+                    { id: 2, title: 'Complete ML Algorithms Quiz', coins: 70, completed: false },
+                    { id: 3, title: 'Build a Simple AI Model', coins: 120, completed: false }
+                );
+            }
+
+            state.tasks = tasks;
+            renderTasks();
+        }
+
+        // Render tasks
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            state.tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `flex items-center justify-between p-4 bg-gray-50 rounded-lg ${task.completed ? 'opacity-50' : ''}`;
+                taskElement.innerHTML = `
+                    <div class="flex items-center">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="completeTask(${task.id})"
+                            class="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        <span class="ml-3">${task.title}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-coin text-yellow-500"></i>
+                        <span class="ml-2">${task.coins}</span>
+                    </div>
+                `;
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        // Complete task
+        async function completeTask(taskId) {
+            showLoading();
+
+            try {
+                const task = state.tasks.find(t => t.id === taskId);
+                if (!task.completed) {
+                    task.completed = true;
+                    state.coins += task.coins;
+                    state.progress += 10;
+                    
+                    // Update progress bar
+                    document.getElementById('progressBar').style.setProperty('--progress', `${state.progress}%`);
+                    document.getElementById('coinCount').textContent = state.coins;
+
+                    // Level up if progress reaches 100%
+                    if (state.progress >= 100) {
+                        state.level += 1;
+                        state.progress = 0;
+                        document.getElementById('currentLevel').textContent = state.level;
+                        alert('Congratulations! You leveled up!');
+                    }
+
+                    // Save progress to database
+                    await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/db', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ooiywoxBprdcS54R6LNc9QWtVfh1',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userId: state.userId,
+                            appSlug: state.appSlug,
+                            action: 'update',
+                            table: 'users',
+                            data: {
+                                coins: state.coins,
+                                level: state.level,
+                                progress: state.progress
+                            }
+                        })
+                    });
+
+                    renderTasks();
+                }
+            } catch (error) {
+                console.error('Error completing task:', error);
+                alert('Failed to complete task. Please try again.');
+            }
+
+            hideLoading();
+        }
+
+        // Logout function
+        function logout() {
+            state = {
+                coins: 0,
+                level: 1,
+                progress: 0,
+                streak: 0,
+                tasks: [],
+                isLoggedIn: false,
+                userId: null
+            };
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('authForm').classList.remove('hidden');
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // Loading helpers
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for existing session
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                state.userId = userId;
+                handleAuth();
+            }
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
